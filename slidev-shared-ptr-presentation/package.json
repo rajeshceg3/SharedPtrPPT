@@ -3,8 +3,8 @@
   "type": "module",
   "private": true,
   "scripts": {
-    "build": "slidev build --theme seriph --style style.css",
-    "dev": "slidev --open --theme seriph --style style.css",
+    "build": "slidev build --theme seriph",
+    "dev": "slidev --open --theme seriph",
     "export": "slidev export"
   },
   "dependencies": {
