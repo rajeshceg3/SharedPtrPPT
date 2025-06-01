@@ -1,0 +1,62 @@
+/* Import Inter and Fira Code fonts from Google Fonts */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700&family=Fira+Code:wght@400;700&display=swap');
+
+/* General body styling */
+body {
+  font-family: 'Inter', sans-serif;
+  color: #f0f0f0; /* Light text color for dark theme */
+  background-color: #121212; /* Dark background color */
+}
+
+/* Slidev content area styling */
+.slidev-layout {
+  background-color: #1a1a1a; /* Slightly lighter dark for content area */
+  border-radius: 8px;
+  padding: 2em;
+}
+
+/* Headings with accent gradient */
+h1, h2, h3 {
+  background: linear-gradient(to right, #00cyan, #6a0dad, #007bff); /* Example: Cyan, Purple, Blue */
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  text-fill-color: transparent;
+}
+
+/* Code blocks styling */
+pre, code {
+  font-family: 'Fira Code', monospace;
+  background-color: #282c34; /* Darker background for code blocks */
+  color: #abb2bf; /* Light text for code */
+  border-radius: 4px;
+  padding: 0.5em 0.75em;
+}
+
+pre {
+  padding: 1em;
+  overflow-x: auto;
+}
+
+/* Links styling */
+a {
+  color: #61dafb; /* Cyan accent for links */
+  text-decoration: none;
+}
+a:hover {
+  text-decoration: underline;
+}
+
+/* Glassmorphism effect example for a potential component */
+.glassmorphic {
+  background: rgba(255, 255, 255, 0.1); /* Semi-transparent white */
+  backdrop-filter: blur(10px);
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1), 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+/* Subtle shadows for elements (can be applied to cards, sections) */
+.shadowed {
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+}
