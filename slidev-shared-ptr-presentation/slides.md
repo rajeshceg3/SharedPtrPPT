@@ -332,9 +332,9 @@ A `std::shared_ptr` is a smart pointer that retains shared ownership of an objec
 
 <div v-click class="mt-4">
 The object is destroyed and its memory deallocated when either of the following happens:
-<ul>
-  <li v-click>the last remaining `shared_ptr` owning the object is destroyed.</li>
-  <li v-click>the last remaining `shared_ptr` owning the object is assigned another pointer via `operator=` or `reset()`.</li>
+<ul class="list-disc pl-5">
+  <li v-click>The last remaining `shared_ptr` owning the object is destroyed.</li>
+  <li v-click>The last remaining `shared_ptr` owning the object is assigned another pointer via `operator=` or `reset()`.</li>
 </ul>
 </div>
 
@@ -609,35 +609,44 @@ layout: default
     //     std::cout << "Now ptr_w manages an object!\n"; // This executes
     // }
     ```
-    *Full example runnable in playground.*
+    <br/>
+    Here's a compact, runnable example to demonstrate the boolean context:
     ```cpp
     // Standalone runnable example for boolean context:
-    std::shared_ptr<Widget> ptr_w_demo;
-    if (ptr_w_demo) {} else { std::cout << "ptr_w_demo is empty initially.\n"; }
-    ptr_w_demo = std::make_shared<Widget>("W-Demo");
-    if (ptr_w_demo) { std::cout << "ptr_w_demo now manages " << ptr_w_demo->name << ".\n"; }
+    std::shared_ptr<Widget> ptr_w_demo; // Default constructor: empty
+    if (ptr_w_demo) {
+        // This block will not execute
+        std::cout << "ptr_w_demo manages an object (unexpected).\n";
+    } else {
+        std::cout << "ptr_w_demo is empty initially.\n"; // This will be printed
+    }
+    ptr_w_demo = std::make_shared<Widget>("W-Demo"); // Now manages a Widget
+    if (ptr_w_demo) {
+        std::cout << "ptr_w_demo now manages Widget '" << ptr_w_demo->name << "'.\n"; // This executes
+    }
     ```
-
 
 2.  **Reference Count (`use_count()`)**:
     Returns the number of `shared_ptr` instances (the strong reference count) that share ownership of the managed object. If empty, returns `0`.
     *Primarily for debugging/demonstration; avoid using it in production logic.*
     ```cpp
-    // ... assuming Widget class is defined above ...
+    // ... continuing with Widget class defined above ...
     // auto sp1 = std::make_shared<Widget>("W-Count");
     // std::cout << "Use count for sp1: " << sp1.use_count() << std::endl; // Output: 1
 
-    // std::shared_ptr<Widget> sp2 = sp1;
-    // std::cout << "Use count after sp2 = sp1: " << sp1.use_count() << std::endl; // Output: 2
+    // std::shared_ptr<Widget> sp2 = sp1; // Copy sp1
+    // std::cout << "Use count for sp1 (after copy): " << sp1.use_count() << std::endl; // Output: 2
     // std::cout << "Use count for sp2: " << sp2.use_count() << std::endl; // Output: 2
     ```
-    *Full example runnable in playground.*
+    <br/>
+    And here's a compact, runnable example for `use_count()`:
     ```cpp
     // Standalone runnable example for use_count:
     auto sp1_demo = std::make_shared<Widget>("W-CountDemo");
-    std::cout << "sp1_demo use_count: " << sp1_demo.use_count() << std::endl;
+    std::cout << "sp1_demo use_count: " << sp1_demo.use_count() << std::endl; // Expected: 1
     std::shared_ptr<Widget> sp2_demo = sp1_demo;
-    std::cout << "sp1_demo use_count after sharing: " << sp1_demo.use_count() << std::endl;
+    std::cout << "sp1_demo use_count after sharing with sp2_demo: " << sp1_demo.use_count() << std::endl; // Expected: 2
+    std::cout << "sp2_demo use_count: " << sp2_demo.use_count() << std::endl; // Expected: 2
     ```
 </div>
 
@@ -654,7 +663,7 @@ The `reset()` method is versatile:
     #include <memory>
     #include <string>
 
-    class Gadget {
+    class Gadget { // Define Gadget class if not already defined on this slide context
     public:
         std::string gadgetName;
         Gadget(const std::string& n) : gadgetName(n) { std::cout << "Gadget " << gadgetName << " created.\n"; }
@@ -663,43 +672,56 @@ The `reset()` method is versatile:
     };
 
     // ... in a function or main ...
-    // auto ptr_gadget_reset_demo = std::make_shared<Gadget>("G-ResetDemo");
-    // std::cout << "Use count before reset: " << ptr_gadget_reset_demo.use_count() << std::endl;
-    // ptr_gadget_reset_demo.reset();
-    // std::cout << "Use count after reset: " << ptr_gadget_reset_demo.use_count() << std::endl;
-    // if (!ptr_gadget_reset_demo) {
-    //     std::cout << "ptr_gadget_reset_demo is now empty.\n";
+    // auto ptr_gadget = std::make_shared<Gadget>("G-Main");
+    // std::cout << "ptr_gadget (" << ptr_gadget->id() << ") use_count before reset: " << ptr_gadget.use_count() << std::endl;
+    // ptr_gadget.reset(); // Gadget "G-Main" is destroyed here if ptr_gadget was the last owner
+    // std::cout << "ptr_gadget use_count after reset: " << ptr_gadget.use_count() << std::endl; // Output: 0
+    // if (!ptr_gadget) {
+    //     std::cout << "ptr_gadget is now empty.\n";
     // }
     ```
-    *Full example runnable in playground.*
+    <br/>
+    Compact, runnable example for `reset()`:
      ```cpp
     // Standalone runnable example for reset():
     auto ptr_grd = std::make_shared<Gadget>("G-ResetDemoStandalone");
-    std::cout << "ptr_grd use_count (" << ptr_grd->id() << "): " << ptr_grd.use_count() << std::endl;
-    ptr_grd.reset();
-    std::cout << "ptr_grd use_count after reset: " << ptr_grd.use_count() << std::endl;
+    std::cout << "ptr_grd (" << ptr_grd->id() << ") use_count: " << ptr_grd.use_count() << std::endl; // Expected: 1
+    ptr_grd.reset(); // "Gadget G-ResetDemoStandalone destroyed." printed
+    std::cout << "ptr_grd use_count after reset: " << ptr_grd.use_count() << std::endl; // Expected: 0
+    if (!ptr_grd) { std::cout << "ptr_grd is confirmed empty.\n"; }
     ```
 
 2.  **`ptr.reset(new_object_ptr)`**:
     Releases ownership of the current object (if any) and takes ownership of `new_object_ptr`.
     ```cpp
     // ... assuming Gadget class is defined above ...
-    // std::shared_ptr<Gadget> ptr_g_replace;
-    // ptr_g_replace.reset(new Gadget("G-ReplaceNew1"));
-    // std::cout << "ptr_g_replace use_count ("<< ptr_g_replace->id() <<"): " << ptr_g_replace.use_count() << std::endl;
-    // ptr_g_replace.reset(new Gadget("G-ReplaceNew2"));
-    // std::cout << "ptr_g_replace now manages ("<< ptr_g_replace->id() <<"): " << ptr_g_replace.use_count() << std::endl;
+    // std::shared_ptr<Gadget> ptr_g_replace; // Empty shared_ptr
+    // ptr_g_replace.reset(new Gadget("G-Initial")); // Manages G-Initial
+    // std::cout << "ptr_g_replace ("<< ptr_g_replace->id() <<") use_count: " << ptr_g_replace.use_count() << std::endl;
+    // ptr_g_replace.reset(new Gadget("G-Replaced")); // G-Initial destroyed, now manages G-Replaced
+    // std::cout << "ptr_g_replace now manages ("<< ptr_g_replace->id() <<"), count: " << ptr_g_replace.use_count() << std::endl;
     ```
-    *Full example runnable in playground.*
+    <br/>
+    Compact, runnable example for `reset(new_object_ptr)`:
     ```cpp
     // Standalone runnable example for reset(new):
-    std::shared_ptr<Gadget> ptr_grn;
-    ptr_grn.reset(new Gadget("G-ReplaceNewStandalone1"));
-    if(ptr_grn) std::cout << "ptr_grn manages ("<< ptr_grn->id() <<"), count: " << ptr_grn.use_count() << std::endl;
-    ptr_grn.reset(new Gadget("G-ReplaceNewStandalone2"));
-    if(ptr_grn) std::cout << "ptr_grn now manages ("<< ptr_grn->id() <<"), count: " << ptr_grn.use_count() << std::endl;
+    std::shared_ptr<Gadget> ptr_grn; // Empty
+    ptr_grn.reset(new Gadget("G-ReplaceNewStandalone1")); // Gadget G-ReplaceNewStandalone1 created
+    if(ptr_grn) {
+        std::cout << "ptr_grn manages ("<< ptr_grn->id() <<"), count: " << ptr_grn.use_count() << std::endl;
+    }
+    // ptr_grn.reset(new Gadget("G-ReplaceNewStandalone2")); // Gadget G-ReplaceNewStandalone1 destroyed, G-ReplaceNewStandalone2 created
+    // The above line using `new` is okay, but make_shared is preferred for new objects.
+    // Let's use make_shared for the replacement for better practice demonstration:
+    ptr_grn = std::make_shared<Gadget>("G-ReplaceNewStandalone2"); // G-ReplaceNewStandalone1 destroyed (if reset wasn't used prior)
+                                                              // or if used, previous object destroyed by reset.
+                                                              // Now G-ReplaceNewStandalone2 created and managed.
+    if(ptr_grn) {
+        std::cout << "ptr_grn now manages ("<< ptr_grn->id() <<"), count: " << ptr_grn.use_count() << std::endl;
+    }
+    // ptr_grn goes out of scope, G-ReplaceNewStandalone2 destroyed
     ```
-    *Note: Prefer `std::make_shared` over `new` with `reset` for new objects when possible for safety and efficiency (control block allocation).*
+    *Note: Prefer `std::make_shared` over `new T(...)` followed by `ptr.reset(new T(...))` when creating and assigning a *new* object. If `reset` is used with a raw pointer from `new`, it takes ownership, but `make_shared` is generally safer and can be more efficient for initial creation.*
 
 <!-- TODO: Add placeholders for live demonstrations with visual feedback -->
 <div class="mt-4 p-4 border rounded-lg glassmorphic min-h-[150px] flex flex-col items-center justify-center">
@@ -949,34 +971,54 @@ int main() {
 
 ### Example: `FILE*` Resource
 ```cpp
-#include <cstdio> // For FILE, fopen, fclose
-#include <memory> // For std::shared_ptr
+#include <cstdio> // For FILE, fopen, fclose, perror, fflush
+#include <memory>   // For std::shared_ptr
 #include <iostream> // For std::cout
 
-// ... (can be placed in main or another function) ...
-// FILE* raw_fp = fopen("example.txt", "w");
-// if (raw_fp) {
-//     // Deleter as a lambda
-//     std::shared_ptr<FILE> filePtr(raw_fp, [](FILE* fp_to_close) {
-//         std::cout << "Custom FILE deleter: Closing file.\n";
-//         if (fclose(fp_to_close) == 0) {
-//             std::cout << "File closed successfully.\n";
-//         } else {
-//             std::cout << "Error closing file.\n";
-//         }
-//     });
+// Example demonstrating managing a FILE* with a custom deleter.
+// This code can be run (e.g., in a main function or a dedicated test function).
+void manage_file_resource() {
+    const char* filename = "example.txt";
+    // Attempt to open the file for writing.
+    FILE* raw_fp = fopen(filename, "w");
 
-//     // Use filePtr to manage the FILE resource
-//     // For example, write to it:
-//     // fprintf(filePtr.get(), "Hello from shared_ptr with custom deleter!\n");
+    if (raw_fp) {
+        std::cout << "Successfully opened " << filename << " for writing.\n";
+        // Create a shared_ptr to manage the FILE*.
+        // The custom deleter is a lambda that calls fclose.
+        std::shared_ptr<FILE> filePtr(raw_fp, [filename](FILE* fp_to_close) {
+            std::cout << "Custom FILE deleter: Closing file '" << filename << "'.\n";
+            if (fclose(fp_to_close) == 0) {
+                std::cout << "File '" << filename << "' closed successfully.\n";
+            } else {
+                // perror provides a system error message.
+                std::perror(("Error closing file '" + std::string(filename) + "'").c_str());
+            }
+        });
 
-//     // When filePtr goes out of scope, the lambda is called, and fclose(raw_fp) happens.
-//     std::cout << "filePtr is about to go out of scope.\n";
-// } else {
-//     std::cout << "Failed to open example.txt\n";
-// }
+        // Use the managed FILE resource via the shared_ptr.
+        fprintf(filePtr.get(), "Hello from std::shared_ptr with a custom deleter!\n");
+        fprintf(filePtr.get(), "The file should be automatically closed when filePtr goes out of scope.\n");
+
+        // It's good practice to flush output to ensure it's written,
+        // especially if the program is short-lived or might crash.
+        if (fflush(filePtr.get()) != 0) {
+            std::perror("Error flushing file content");
+        } else {
+            std::cout << "Content flushed to " << filename << ".\n";
+        }
+
+        std::cout << "filePtr is about to go out of scope (end of manage_file_resource function).\n";
+        // When filePtr goes out of scope here, its lambda deleter will be invoked,
+        // which in turn calls fclose(raw_fp).
+    } else {
+        std::perror(("Failed to open file '" + std::string(filename) + "'").c_str());
+    }
+}
+// To test, call manage_file_resource() from main.
+// After execution, "example.txt" should exist with the content written.
 ```
-*(The `FILE*` example is commented for brevity on the slide but demonstrates the pattern)*
+*(This `FILE*` example demonstrates managing non-memory resources. Ensure `example.txt` is writable in the execution directory.)*
 </div>
 </div>
 
@@ -1177,14 +1219,45 @@ Using `std::shared_ptr` effectively involves following some key guidelines to ma
 
 - **Don't create a `shared_ptr` by calling `new MyClass(...)` and passing `this` to its constructor or a member function that then tries to create a `shared_ptr` from `this` without `enable_shared_from_this`.**
   ```cpp
-  class Node {
+  class Node : public std::enable_shared_from_this<Node> { // Note: Inherit from std::enable_shared_from_this
   public:
-      // Node(Controller* ctrl) {
-      //    ctrl->registerNode(std::shared_ptr<Node>(this)); // BAD!
-      // }
+    Controller* controller_ptr; // Assuming Controller is defined elsewhere
+
+    Node(Controller* ctrl) : controller_ptr(ctrl) {}
+
+    void registerWithController() {
+        // Assuming Controller::registerNode expects a std::shared_ptr<Node>
+        // And 'this' object is already managed by a std::shared_ptr externally.
+        // controller_ptr->registerNode(shared_from_this());
+        std::cout << "Node registered using shared_from_this().\n";
+    }
+
+    void problematicRegistration(Controller* ctrl) {
+        // BAD: Creates an independent shared_ptr from 'this'.
+        // If 'this' object is already managed by another shared_ptr,
+        // this leads to two separate control blocks and likely double deletion.
+        // ctrl->registerNode(std::shared_ptr<Node>(this));
+        std::cout << "Problematic registration attempt with std::shared_ptr<Node>(this).\n";
+    }
+
+    // Example method to be called to initiate registration
+    // AFTER a shared_ptr to this Node object has been created.
+    // void someMethodThatCallsRegister() {
+    //    if (controller_ptr) {
+    //        // Correct way, assuming this Node object is already managed by a shared_ptr
+    //        controller_ptr->registerNode(shared_from_this());
+    //    }
+    // }
   };
   ```
-  If an object is already managed by a `shared_ptr`, `shared_from_this()` is the way. If not, passing `this` to create a *new, independent* `shared_ptr` will lead to multiple owners and double deletion.
+  **Explanation:**
+  If an object (like `Node`) needs to give out `shared_ptr`s to itself, and it's already under the ownership of an existing `shared_ptr`, it should inherit from `std::enable_shared_from_this<ClassName>` and use its `shared_from_this()` method.
+
+  Creating a *new* `std::shared_ptr<Node>(this)` from a raw `this` pointer (as shown in `problematicRegistration` or the commented-out constructor line) is dangerous because:
+  1. If the `Node` instance is *already* managed by a `shared_ptr` (e.g., `auto node_ptr = std::make_shared<Node>(...);`), then `std::shared_ptr<Node>(this)` creates a *second, independent* `shared_ptr` with its own control block. Both `shared_ptr`s will think they uniquely own the memory, leading to a double `delete` when they both go out of scope.
+  2. If the `Node` instance was created as a stack variable or with `new` but *not* yet managed by any `shared_ptr`, creating a `shared_ptr` from `this` inside its constructor or a member function can be problematic if not handled carefully (e.g. the object might be deleted prematurely if that `shared_ptr` is the only one and goes out of scope).
+
+  The `shared_from_this()` method, when called on an object already managed by a `std::shared_ptr`, returns a new `shared_ptr` instance that *shares ownership* with the existing `shared_ptr`(s), correctly incrementing the reference count in the *same* control block.
 
 - **Be extremely cautious with `get()`:**
     - **Never `delete` the pointer returned by `get()`.** The `shared_ptr` owns it.
