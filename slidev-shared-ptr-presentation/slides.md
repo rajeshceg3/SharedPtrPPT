@@ -55,9 +55,8 @@ layout: default
 - Comparison with other Smart Pointers
 - Summary and Q&A
 
-<div class="absolute bottom-10 right-10 text-xs opacity-50">
-  Slide <SlideCurrentNo /> / <SlidesTotal />
-</div>
+<!-- Removed manual slide counter, replaced by ProgressTracker component -->
+<ProgressTracker />
 
 
 ---
@@ -108,9 +107,14 @@ layout: default
 
 Imagine your program's memory as a bucket. With raw pointers, if you forget to empty parts of it, it overflows!
 
+<div class="mt-4 text-center">
+  <img src="/images/memory-leak-visualization.gif" alt="Memory Leak Visualization" class="mx-auto mt-4 h-60 rounded-lg shadow-md">
+  <p class="text-sm opacity-85">Conceptual visualization of a memory leak.</p>
+</div>
+
 <div v-click class="mt-4">
   <img src="https://media.giphy.com/media/3oriO0OEd9QIDdllqo/giphy.gif" alt="Leaking Bucket" class="mx-auto h-72 rounded-lg shadow-lg">
-  <p class="text-center text-sm opacity-75">Visual representation of a memory leak (sort of!)</p>
+  <p class="text-center text-sm opacity-75">And here's a more... dramatic take!</p>
 </div>
 
 
@@ -348,11 +352,11 @@ To use `shared_ptr`, you need to include the `<memory>` header:
 <div v-click>
 ### Key Characteristics:
 <ul>
-  <li v-click> <span class="text-cyan-400">🤝 Shared Ownership:</span> Multiple pointers, one object.</li>
-  <li v-click> <span class="text-cyan-400">⏱️ Reference Counting:</span> Keeps track of owners.</li>
-  <li v-click> <span class="text-cyan-400">🗑️ Automatic Cleanup:</span> Deallocates when no owners remain.</li>
-  <li v-click> <span class="text-cyan-400">✅ Exception Safe:</span> Resources are released correctly.</li>
-  <!-- TODO: Add icons for each characteristic -->
+  <li v-click> <span class="text-cyan-400">🤝 [SO_icon] Shared Ownership:</span> Multiple pointers, one object.</li>
+  <li v-click> <span class="text-cyan-400">⏱️ [RC_icon] Reference Counting:</span> Keeps track of owners.</li>
+  <li v-click> <span class="text-cyan-400">🗑️ [AC_icon] Automatic Cleanup:</span> Deallocates when no owners remain.</li>
+  <li v-click> <span class="text-cyan-400">✅ [ES_icon] Exception Safe:</span> Resources are released correctly.</li>
+  <!-- TODO: Add icons for each characteristic - Placeholders [icon_name] added. Replace with actual <img> or SVG. -->
 </ul>
 </div>
 
@@ -433,8 +437,8 @@ layout: default
 <!-- TODO: Visual counter showing ref count increments/decrements -->
 <div class="p-4 border rounded-lg glassmorphic min-h-[150px] flex flex-col items-center justify-center mt-4">
   <p class="text-lg font-semibold mb-2">Visual Ref Count</p>
-  <p class="text-4xl font-bold text-cyan-400">Ref Count: <span class="animate-pulse">N</span></p>
-  <p class="mt-2 text-sm"><em>[Placeholder for a visual counter that updates as shared_ptrs are created/destroyed.]</em></p>
+  <VisualRefCounter :count="3" />
+  <p class="mt-2 text-sm"><em>This counter demonstrates the display. Full interactivity to come!</em></p>
 </div>
 </div>
 
