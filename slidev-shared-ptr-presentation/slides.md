@@ -1,4 +1,15 @@
----\ncolorSchema: dark\ntheme: seriph\nhighlighter: shiki\nlineNumbers: true\nfonts:\n  sans: "Inter"\n  mono: "Fira Code"\ntransition: slide-left\ndrawings:\n  persist: false\n---\n
+---
+colorSchema: dark
+theme: seriph
+highlighter: shiki
+lineNumbers: true
+fonts:
+  sans: "Inter"
+  mono: "Fira Code"
+transition: slide-left
+drawings:
+  persist: false
+---
 
 <!--
 DEV_NOTE: Most TODOs in slides 1-10 have been reviewed.
@@ -33,8 +44,6 @@ layout: cover
 using a Vue component:
   <FloatingCodeSnippets />
 -->
-
-
 ---
 layout: default
 # TODO: Consider implementing a progress tracker component here later.
@@ -65,8 +74,6 @@ layout: default
 
 <!-- Removed manual slide counter, replaced by ProgressTracker component -->
 <ProgressTracker />
-
-
 ---
 layout: default
 
@@ -81,7 +88,6 @@ layout: default
 Remember the Mars Climate Orbiter? Or countless hours spent chasing elusive bugs? Many such issues stem from manual memory management pitfalls.
 
 <br/>
-
 ---
 <!-- Separate slide for the poll, or could be combined -->
 layout: statement
@@ -100,7 +106,6 @@ layout: statement
 <div v-if="$slidev.nav.clicks === 1">
   <p class="text-center mt-8">You're not alone!</p>
 </div>
-
 ---
 layout: default
 
@@ -124,8 +129,6 @@ Imagine your program's memory as a bucket. With raw pointers, if you forget to e
   <img src="https://media.giphy.com/media/3oriO0OEd9QIDdllqo/giphy.gif" alt="Leaking Bucket" class="mx-auto h-72 rounded-lg shadow-lg">
   <p class="text-center text-sm opacity-75">And here's a more... dramatic take!</p>
 </div>
-
-
 ---
 layout: default
 # ---
@@ -225,8 +228,6 @@ int main() {
   - Add memory leak visualization (e.g., animated SVG/image).
   - Add animated diagram for memory allocation/deallocation problems & ownership.
 -->
-
-
 ---
 layout: default
 # ---
@@ -274,7 +275,6 @@ Raw pointers leave memory management entirely up to you. It's like juggling chai
 
 </div>
 </div>
-
 ---
 layout: default
 
@@ -309,7 +309,6 @@ C++ offers a few types of smart pointers in the \`<memory>\` header:
   <p class="text-2xl">Our focus today: The versatile <code class="text-cyan-400 text-3xl">std::shared_ptr</code>!</p>
   <!-- TODO: Add spotlight effect transition to shared_ptr focus -->
 </div>
-
 ---
 layout: default
 # ---
@@ -375,8 +374,6 @@ To use `shared_ptr`, you need to include the `<memory>` header:
 <!--
   Note: Animated text reveal can be achieved by adding `v-click` to elements or using `v-after` for sequential reveals.
 -->
-
-
 ---
 layout: default
 # ---
@@ -433,8 +430,7 @@ layout: default
 <!-- TODO: Interactive diagram showing reference count changes -->
 <div class="p-4 border rounded-lg glassmorphic min-h-[200px] flex flex-col items-center justify-center">
   <p class="text-lg font-semibold mb-2">Object & Ref Count</p>
-  <img src="https://placehold.co/300x150?text=Interactive+Diagram
-(Object+Lifecycle)" alt="Placeholder for interactive diagram" class="rounded opacity-70">
+  <img src="https://placehold.co/300x150?text=Interactive+Diagram%0A(Object+Lifecycle)" alt="Placeholder for interactive diagram" class="rounded opacity-70">
   <p class="mt-2 text-sm"><em>[Placeholder for interactive diagram showing an object, shared_ptrs pointing to it, and the reference count changing dynamically.]</em></p>
 </div>
 </div>
@@ -470,7 +466,390 @@ layout: default
   - Diagram of shared_ptr, control block, and object.
   - Animation of ref count changing with shared_ptr copies and destructions.
 -->
+---
+layout: default
+# ---
+# Creating shared_ptr - Multiple Ways (Slide 8)
+# ---
 
+# Creating `std::shared_ptr`: The Options
+
+There are several ways to create a `std::shared_ptr`:
+
+<div class="grid grid-cols-1 md:grid-cols-2 gap-8 mt-6 items-start">
+
+<div>
+
+### 1. `std::make_shared<T>(args...)` (Preferred)
+This is generally the **best and safest** way to create a `shared_ptr`.
+
+```cpp
+#include <iostream>
+#include <memory>
+#include <string>
+
+class Widget {
+public:
+    std::string name;
+    Widget(const std::string& n) : name(n) {
+        std::cout << "Widget '" << name << "' created.\n";
+    }
+    ~Widget() {
+        std::cout << "Widget '" << name << "' destroyed.\n";
+    }
+};
+
+int main() {
+    // Method 1: std::make_shared (preferred)
+    auto ptr1 = std::make_shared<Widget>("Gizmo");
+    // ptr1 now owns a Widget object.
+    // Ref count for "Gizmo" is 1.
+
+    if(ptr1) {
+        std::cout << "ptr1 manages: " << ptr1->name << std::endl;
+        std::cout << "ptr1 use_count: " << ptr1.use_count() << std::endl;
+    }
+    return 0;
+}
+// "Gizmo" destroyed when ptr1 goes out of scope.
+```
+**Pros:**
+-   **Efficiency:** Often allocates memory for the object and its control block in a single operation, reducing overhead and improving cache locality.
+-   **Exception Safety:** Prevents potential memory leaks if an exception occurs during the `shared_ptr`'s construction process (e.g., in complex expressions like `foo(std::shared_ptr<T>(new T()), std::shared_ptr<U>(new U()))`).
+
+</div>
+
+<div>
+
+### 2. Constructor: `std::shared_ptr<T>(new T(args...))`
+You can construct a `shared_ptr` directly from a raw pointer obtained via `new`.
+
+```cpp
+#include <iostream>
+#include <memory>
+#include <string>
+
+// Assuming Widget class from previous example
+
+int main() {
+    // Method 2: Constructor with new
+    // Less preferred than make_shared due to potential for
+    // two allocations and exception safety issues in some contexts.
+    std::shared_ptr<Widget> ptr2(new Widget("Gadget"));
+    // ptr2 owns the Widget "Gadget". Ref count is 1.
+
+    if(ptr2) {
+        std::cout << "ptr2 manages: " << ptr2->name << std::endl;
+        std::cout << "ptr2 use_count: " << ptr2.use_count() << std::endl;
+    }
+    return 0;
+}
+// "Gadget" destroyed when ptr2 goes out of scope.
+```
+**Cons:**
+-   **Two Allocations:** One for `new Widget(...)` and another for the `shared_ptr`'s control block (unless an allocator is used that combines them, which is rare for this form).
+-   **Exception Safety Nuances:** In expressions like `process(std::shared_ptr<X>(new X()), potentially_throwing_func())`, if `potentially_throwing_func()` throws after `new X()` but before the `shared_ptr` constructor takes ownership, `new X()` could leak. `make_shared` avoids this.
+
+### 3. `reset()` Method
+An existing `shared_ptr` (even an empty one) can be made to own a new object using `reset()`.
+
+```cpp
+#include <iostream>
+#include <memory>
+#include <string>
+
+// Assuming Widget class from previous example
+
+int main() {
+    // Method 3: reset()
+    std::shared_ptr<Widget> ptr3; // ptr3 is empty
+    std::cout << "ptr3 use_count (before reset): " << ptr3.use_count() << std::endl;
+
+    ptr3.reset(new Widget("Doohickey"));
+    // ptr3 now owns "Doohickey". Ref count is 1.
+
+    if(ptr3) {
+        std::cout << "ptr3 manages: " << ptr3->name << std::endl;
+        std::cout << "ptr3 use_count (after reset): " << ptr3.use_count() << std::endl;
+    }
+
+    // ptr3.reset(); // This would release ownership and destroy "Doohickey"
+    // std::cout << "ptr3 use_count (after 2nd reset): " << ptr3.use_count() << std::endl;
+    return 0;
+}
+// "Doohickey" destroyed when ptr3 goes out of scope (if not reset earlier).
+```
+**Notes:**
+-   If `ptr3` already managed an object, `reset()` first releases that old object (decrementing its ref count, potentially destroying it) before taking ownership of the new one.
+-   Similar performance/safety concerns as the constructor method when using `new`.
+
+</div>
+</div>
+
+<br/>
+<div class="text-center p-4 mt-4 bg-cyan-900 bg-opacity-30 rounded-lg">
+  **Key Takeaway:** Always prefer `std::make_shared` when you are creating a brand new object to be managed by a `shared_ptr`.
+  It's generally safer and more performant.
+</div>
+
+<!-- TODO:
+- Visual pros/cons comparison (e.g., a small table or icons).
+- Performance implications with charts (conceptual for now, actual charts are advanced).
+-->
+---
+layout: default
+# ---
+# Basic Operations - Interactive Examples (Slide 9)
+# ---
+
+# Basic `shared_ptr` Operations
+
+Let's explore some fundamental operations with `std::shared_ptr`.
+
+<div class="grid grid-cols-1 md:grid-cols-2 gap-8 mt-6 items-start">
+
+<div>
+
+### Core Functionality
+
+-   **Creation**: Typically using `std::make_shared`.
+-   **Copying**: Assigning one `shared_ptr` to another. This increments the reference count.
+-   **Dereferencing**: Accessing the managed object using `*` and `->`.
+-   **Resetting**: Releasing ownership, or changing the managed object.
+-   **Checking State**: Verifying if a `shared_ptr` manages an object (`if (ptr)`) and getting the reference count (`use_count()`).
+
+### Example: Managing `Person` Objects
+
+This example demonstrates creation, copying, and the automatic destruction when `shared_ptr`s go out of scope.
+
+```cpp
+#include <iostream>
+#include <memory>   // For std::shared_ptr, std::make_shared
+#include <string>   // For std::string
+
+class Person {
+public:
+    std::string name;
+    Person(const std::string& n) : name(n) {
+        std::cout << "Person '" << name << "' created (constructor).\n";
+    }
+    ~Person() {
+        std::cout << "Person '" << name << "' destroyed (destructor).\n";
+    }
+    void greet() const {
+        std::cout << "Hello, my name is " << name << ".\n";
+    }
+};
+
+int main() {
+    std::cout << "--- Starting Basic Operations Demo ---" << std::endl;
+
+    // 1. Create a shared_ptr using std::make_shared
+    auto person1 = std::make_shared<Person>("Alice");
+    std::cout << "person1 (" << person1->name << ") use_count: "
+              << person1.use_count() << std::endl; // Expected: 1
+
+    person1->greet();
+
+    { // Inner scope
+        // 2. Copy shared_ptr (increases reference count)
+        std::shared_ptr<Person> person2 = person1;
+        std::cout << "  --- Inner Scope ---" << std::endl;
+        std::cout << "  person1 (" << person1->name << ") use_count after person2 created: "
+                  << person1.use_count() << std::endl; // Expected: 2
+        std::cout << "  person2 (" << person2->name << ") use_count: "
+                  << person2.use_count() << std::endl; // Expected: 2
+
+        person2->greet();
+
+        auto person3 = std::make_shared<Person>("Bob");
+        std::cout << "  person3 (" << person3->name << ") use_count: "
+                  << person3.use_count() << std::endl; // Expected: 1
+        person3->greet();
+
+        std::cout << "  --- Exiting Inner Scope ---" << std::endl;
+        // person2 and person3 go out of scope here.
+        // Destructor for "Bob" will be called (person3's ref count -> 0).
+        // Ref count for "Alice" will decrement (due to person2).
+    }
+
+    std::cout << "--- Back in Outer Scope ---" << std::endl;
+    std::cout << "person1 (" << person1->name << ") use_count after inner scope: "
+              << person1.use_count() << std::endl; // Expected: 1
+
+    std::cout << "--- Exiting Main ---" << std::endl;
+    // person1 goes out of scope.
+    // Destructor for "Alice" will be called (person1's ref count -> 0).
+    return 0;
+}
+```
+
+</div>
+
+<div>
+
+### Expected Output & Explanation
+
+The console output will show:
+1.  `Person 'Alice' created...`
+2.  `person1 (Alice) use_count: 1`
+3.  Alice's greeting.
+4.  `--- Inner Scope ---`
+5.  `person1 (Alice) use_count after person2 created: 2`
+6.  `person2 (Alice) use_count: 2`
+7.  Alice's greeting (via `person2`).
+8.  `Person 'Bob' created...`
+9.  `person3 (Bob) use_count: 1`
+10. Bob's greeting.
+11. `--- Exiting Inner Scope ---`
+12. `Person 'Bob' destroyed...` (as `person3` is destroyed)
+13. `--- Back in Outer Scope ---`
+14. `person1 (Alice) use_count after inner scope: 1` (as `person2` is destroyed)
+15. `--- Exiting Main ---`
+16. `Person 'Alice' destroyed...` (as `person1` is destroyed)
+
+This demonstrates how `shared_ptr` automatically manages the lifetime of the `Person` objects based on the reference counts.
+
+<!-- TODO:
+- Implement real-time output display for code examples (requires custom component).
+- Add a visual reference count tracker that updates as code executes (requires custom component).
+- Consider an "interactive example" where users can click to step through code and see state changes.
+-->
+<div class="mt-6 p-4 border rounded-lg glassmorphic min-h-[150px] flex flex-col items-center justify-center">
+  <p class="text-lg font-semibold mb-2">Interactive Zone</p>
+  <img src="https://placehold.co/300x120?text=Live+Output+&+RefCount+Tracker" alt="Placeholder for interactive elements" class="rounded opacity-70">
+  <p class="mt-2 text-sm"><em>[Future: Live code output and dynamic reference count visualization here.]</em></p>
+</div>
+
+</div>
+</div>
+---
+layout: default
+# ---
+# Sharing is Caring - Multiple Owners (Slide 10)
+# ---
+
+# Sharing is Caring: Multiple Owners 🤝
+
+The core idea of `std::shared_ptr` is to allow multiple pointers to share ownership of a single object. The object remains alive as long as at least one `shared_ptr` owns it.
+
+<div class="grid grid-cols-1 md:grid-cols-2 gap-8 mt-6 items-start">
+
+<div>
+
+### Demonstrating Shared Ownership
+
+This example shows how several `shared_ptr` instances can point to the same `Task` object. The `Task` object is only destroyed when the last `shared_ptr` managing it goes out of scope or is reset.
+
+```cpp
+#include <iostream>
+#include <memory>   // For std::shared_ptr, std::make_shared
+#include <string>   // For std::string
+#include <vector>   // For std::vector
+
+class Task {
+public:
+    std::string task_id;
+    Task(const std::string& id) : task_id(id) {
+        std::cout << "Task '" << task_id << "' created.\n";
+    }
+    ~Task() {
+        std::cout << "Task '" << task_id << "' destroyed.\n";
+    }
+    void execute() const {
+        std::cout << "Executing task '" << task_id << "'.\n";
+    }
+};
+
+void process_task(std::shared_ptr<Task> current_task, const std::string& context) {
+    std::cout << "  [" << context << "] Current task: " << current_task->task_id
+              << ", Use count: " << current_task.use_count() << std::endl;
+    current_task->execute();
+    // current_task goes out of scope here, ref count decrements.
+    std::cout << "  [" << context << "] Finished processing. Task use count now: "
+              << current_task.use_count() -1 << " (approx, as current_task is dying)" << std::endl;
+}
+
+int main() {
+    std::cout << "--- Sharing is Caring Demo ---" << std::endl;
+
+    // 1. Create a Task object managed by a shared_ptr
+    auto important_task = std::make_shared<Task>("Cleanup_Database_Logs");
+    std::cout << "Initial task '" << important_task->task_id << "' use_count: "
+              << important_task.use_count() << std::endl; // Expected: 1
+
+    // 2. Create a vector to hold multiple shared_ptrs to the same task
+    std::vector<std::shared_ptr<Task>> task_references;
+
+    task_references.push_back(important_task); // Copied, ref count becomes 2
+    std::cout << "After adding to vector, task use_count: "
+              << important_task.use_count() << std::endl; // Expected: 2
+
+    task_references.push_back(important_task); // Copied again, ref count becomes 3
+    std::cout << "After adding to vector again, task use_count: "
+              << important_task.use_count() << std::endl; // Expected: 3
+
+    // 3. Pass to a function (another copy, temporary)
+    process_task(important_task, "Direct Call");
+    std::cout << "After process_task (direct), task use_count: "
+              << important_task.use_count() << std::endl; // Expected: 3 (function's copy is gone)
+
+    // 4. Pass one from the vector to the function
+    if (!task_references.empty()) {
+        process_task(task_references[0], "Vector Call");
+        std::cout << "After process_task (vector[0]), task use_count: "
+                  << important_task.use_count() << std::endl; // Expected: 3
+    }
+
+    // 5. Clear the vector
+    std::cout << "Clearing task_references vector..." << std::endl;
+    task_references.clear(); // Destroys shared_ptrs in vector. Ref count for task drops by 2.
+    std::cout << "After clearing vector, task use_count: "
+              << important_task.use_count() << std::endl; // Expected: 1
+
+    std::cout << "--- Exiting Main ---" << std::endl;
+    // important_task (the original shared_ptr) goes out of scope.
+    // Ref count becomes 0, Task "Cleanup_Database_Logs" is destroyed.
+    return 0;
+}
+
+```
+*(Note: `use_count()` in `process_task` for the dying parameter is illustrative; the exact moment of decrement can be subtle.)*
+
+</div>
+
+<div>
+
+### Visualizing Shared Ownership
+
+Imagine a central object (our `Task`). Multiple `shared_ptr` instances are like threads or handles attached to this object.
+- Each time a `shared_ptr` is copied, a new thread/handle is attached.
+- Each time a `shared_ptr` is destroyed or reset, one thread/handle is detached.
+- The object itself is only discarded when the very last thread/handle is gone.
+
+<!-- TODO:
+- Visual network diagram showing shared ownership.
+  (e.g., a central node for the object, with lines to various shared_ptr instances)
+- Reference count visualization throughout lifecycle.
+  (e.g., a bar graph or counter updating as shared_ptrs are created/destroyed)
+- Animated cleanup sequence showing the object being destroyed when count reaches zero.
+-->
+<div class="mt-6 p-4 border rounded-lg glassmorphic min-h-[200px] flex flex-col items-center justify-center">
+  <p class="text-lg font-semibold mb-2">Ownership Network</p>
+  <img src="https://placehold.co/300x180?text=Object+<--+Ptr1,+Ptr2,+Ptr3" alt="Placeholder for ownership diagram" class="rounded opacity-70">
+  <p class="mt-2 text-sm"><em>[Future: Diagram of multiple `shared_ptr`s pointing to one object, with dynamic reference count display.]</em></p>
+</div>
+
+<div class="mt-4 p-4 border rounded-lg glassmorphic min-h-[120px] flex flex-col items-center justify-center">
+  <p class="text-lg font-semibold mb-2">Cleanup Animation</p>
+  <img src="https://placehold.co/300x100?text=Ref+Count+->+0+=>+Destroy" alt="Placeholder for cleanup animation" class="rounded opacity-70">
+  <p class="mt-2 text-sm"><em>[Future: Animation showing the object's destruction as the last `shared_ptr` releases it.]</em></p>
+</div>
+
+</div>
+</div>
+
+**This shared ownership model is fundamental to using `shared_ptr` for managing resources that have complex or indeterminate lifetimes dependent on multiple parts of a program.**
 ---
 layout: default
 # ---
@@ -564,7 +943,6 @@ int main() {
 </div>
 
 **Key Takeaway:** Accessing the object is intuitive, but be careful when using `get()` not to invalidate the `shared_ptr`'s ownership.
-
 ---
 layout: default
 # ---
@@ -734,7 +1112,6 @@ The `reset()` method is versatile:
 </div>
 
 **Important:** `use_count()` can be misleading in multi-threaded scenarios or during object construction/destruction. Use primarily for educational or debugging purposes.
-
 ---
 layout: default
 # ---
@@ -866,7 +1243,6 @@ To break such cycles, C++ provides `std::weak_ptr`.
 </div>
 
 **Key Lesson:** Be mindful of ownership cycles when using `shared_ptr`. Use `std::weak_ptr` to break them by making one of the links in the cycle non-owning.
-
 ---
 layout: default
 # ---
@@ -1023,7 +1399,6 @@ void manage_file_resource() {
 </div>
 
 **Custom deleters make `shared_ptr` incredibly flexible for various resource management tasks beyond basic memory, ensuring RAII principles are upheld.**
-
 ---
 layout: default
 # ---
@@ -1116,7 +1491,6 @@ While `shared_ptr` offers safety and convenience, it's not "free." There are per
     - When managing a very large number of very small, short-lived objects where overhead could accumulate.
 - Always prefer `std::make_shared` for creating objects managed by `shared_ptr`.
 - If shared ownership is not required, `std::unique_ptr` is a more lightweight smart pointer with less overhead.
-
 ---
 layout:default
 # ---
@@ -1287,7 +1661,6 @@ Using `std::shared_ptr` effectively involves following some key guidelines to ma
 </div>
 
 **Following these rules helps write safer, more maintainable, and efficient C++ code with `shared_ptr`.**
-
 ---
 layout: default
 # ---
@@ -1465,3 +1838,511 @@ int main() {
 </div>
 
 This example demonstrates how `shared_ptr` facilitates robust management of shared resources, ensuring they are available as long as needed and cleaned up automatically when all references are gone.
+---
+layout: default
+# ---
+# Comparison Table (Slide 18)
+# ---
+
+# Smart Pointer Showdown: A Quick Comparison
+
+Let's summarize how `std::shared_ptr` stacks up against raw pointers and other common smart pointers.
+
+| Feature             | Raw Pointer (`T*`) | `std::unique_ptr<T>` | `std::shared_ptr<T>` | `std::weak_ptr<T>` |
+|---------------------|--------------------|-----------------------|------------------------|--------------------|
+| **Ownership Model** | Manual (Ambiguous) | Exclusive, Movable    | Shared, Reference Counted | Non-owning (Observes `shared_ptr`) |
+| **Automatic Cleanup (RAII)** | ❌ No             | ✅ Yes                | ✅ Yes                 | ❌ No (Indirectly via `shared_ptr`) |
+| **Copyable**        | ✅ Yes (Pointer value) | ❌ No (Movable only)  | ✅ Yes (Shares ownership, increments ref count) | ✅ Yes (Observes same object, increments weak count) |
+| **Movable**         | ✅ Yes (Pointer value) | ✅ Yes (Transfers ownership) | ✅ Yes (Transfers `shared_ptr` instance, not ownership semantics directly like `unique_ptr`) | ✅ Yes (Transfers `weak_ptr` instance) |
+| **Memory Overhead** | Minimal (Pointer only) | Minimal (Usually same as raw pointer) | Moderate (Pointer to object + Pointer to Control Block) | Moderate (Pointer to Control Block) |
+| **Performance Overhead (Ref Counting)** | None | None | Moderate (Atomic operations for ref counts) | Moderate (Atomic operations for weak/strong counts) |
+| **Dangling Risk**   | High               | Low (if used correctly) | Low (if used correctly, watch for `get()`) | Medium (if object expires before `lock()`) |
+| **Circular References** | Possible (manual issue) | Not directly an issue | ⚠️ **Problematic** (Can cause leaks) | ✅ **Solution** (Helps break cycles) |
+| **Thread Safety (Pointer itself)** | Manual Sync Needed | Manual Sync Needed    | ✅ Ref counting is thread-safe | ✅ Control block access is thread-safe |
+| **Thread Safety (Managed Object)** | Manual Sync Needed | Manual Sync Needed    | ❌ Manual Sync Needed for object access | ❌ Manual Sync Needed for object access (via locked `shared_ptr`) |
+| **Use Case**        | Legacy code, Interop with C APIs (carefully) | Sole ownership (PImpl, factory returns) | Shared ownership by multiple independent entities | Caching, observer patterns, breaking `shared_ptr` cycles |
+| **Header**          | N/A                | `<memory>`            | `<memory>`             | `<memory>`         |
+
+<br/>
+
+**Key Considerations When Choosing:**
+
+*   **`std::unique_ptr`**: Default choice for RAII when exclusive ownership is sufficient. Lightweight and efficient.
+*   **`std::shared_ptr`**: Use when an object's lifetime needs to be managed by multiple independent owners. Essential for many data structures or callback systems.
+*   **`std::weak_ptr`**: Use to observe objects managed by `shared_ptr` without extending their lifetime, primarily to break circular dependencies.
+*   **Raw Pointers**: Minimize their use in modern C++. Reserve for specific, controlled situations like interacting with C libraries or in performance-critical code where ownership is meticulously handled manually (with extreme caution).
+
+Always aim for the smart pointer that expresses your ownership intent most clearly and safely.
+---
+layout: default
+# ---
+# Common Mistakes - Debug Session (Slide 19)
+# ---
+
+# Common `shared_ptr` Mistakes: Debug Session 🕵️‍♀️
+
+Even with smart pointers, there are common pitfalls to watch out for. Let's look at a few "Spot the Bug" scenarios.
+
+<div class="grid grid-cols-1 md:grid-cols-2 gap-8 mt-6 items-start">
+
+<div>
+
+### Mistake 1: Multiple `shared_ptr`s from Raw Pointer
+
+Creating more than one `shared_ptr` from the *same raw pointer* using the `shared_ptr` constructor independently. Each `shared_ptr` will have its own control block and will attempt to delete the raw pointer.
+
+**Spot the Bug:**
+```cpp
+#include <iostream>
+#include <memory>
+
+struct BadWidget {
+    int id;
+    BadWidget(int i) : id(i) { std::cout << "BadWidget " << id << " created.\n"; }
+    ~BadWidget() { std::cout << "BadWidget " << id << " destroyed.\n"; }
+};
+
+int main() {
+    BadWidget* raw_w = new BadWidget(101);
+
+    std::shared_ptr<BadWidget> sp1(raw_w);
+    std::cout << "sp1 use_count: " << sp1.use_count() << std::endl;
+
+    // BUG: sp2 gets its own, separate control block for raw_w!
+    std::shared_ptr<BadWidget> sp2(raw_w);
+    std::cout << "sp2 use_count: " << sp2.use_count() << std::endl;
+
+    // When sp1 goes out of scope, BadWidget 101 is deleted.
+    // When sp2 goes out of scope, BadWidget 101 is deleted AGAIN!
+    // Result: Double deletion -> undefined behavior (crash!).
+    std::cout << "Exiting main..." << std::endl;
+    return 0;
+}
+```
+**Fix:** Create one `shared_ptr` from the raw pointer, then copy that `shared_ptr`.
+```cpp
+// Corrected approach:
+// std::shared_ptr<BadWidget> sp1_fixed(raw_w);
+// std::shared_ptr<BadWidget> sp2_fixed = sp1_fixed; // Correct! Shares ownership.
+```
+
+</div>
+
+<div>
+
+### Mistake 2: Circular References (Revisited)
+
+As discussed on Slide 13, if two objects hold `shared_ptr`s to each other, they create a cycle that prevents their destruction.
+
+**Spot the Bug:**
+```cpp
+#include <iostream>
+#include <memory>
+#include <string>
+
+struct CycleNode; // Forward declaration
+
+struct CycleNode {
+    std::string name;
+    std::shared_ptr<CycleNode> other_node; // Potential cycle
+    CycleNode(const std::string& n) : name(n) { std::cout << "Node " << name << " created.\n"; }
+    ~CycleNode() { std::cout << "Node " << name << " destroyed.\n"; }
+};
+
+int main() {
+    std::shared_ptr<CycleNode> nodeA, nodeB;
+    {
+        nodeA = std::make_shared<CycleNode>("A");
+        nodeB = std::make_shared<CycleNode>("B");
+
+        nodeA->other_node = nodeB; // Node A points to B
+        nodeB->other_node = nodeA; // Node B points back to A - CYCLE!
+
+        std::cout << "nodeA use_count: " << nodeA.use_count() << std::endl; // Will be 2
+        std::cout << "nodeB use_count: " << nodeB.use_count() << std::endl; // Will be 2
+    } // nodeA and nodeB (the local shared_ptrs) go out of scope.
+      // Their ref counts drop to 1 due to internal pointers, not 0.
+      // BUG: Destructors for Node A and Node B are NOT called! Memory leak.
+    std::cout << "Exiting main. Check if destructors were called." << std::endl;
+    return 0;
+}
+```
+**Fix:** Use `std::weak_ptr` for one of the references in the cycle (e.g., `std::weak_ptr<CycleNode> other_node;`).
+
+</div>
+
+<div>
+
+### Mistake 3: `this` from non-`enable_shared_from_this`
+
+Creating a `shared_ptr` from `this` within a class method, when the object isn't already managed by a `shared_ptr` or the class doesn't inherit from `std::enable_shared_from_this`.
+
+**Spot the Bug:**
+```cpp
+#include <iostream>
+#include <memory>
+#include <vector>
+
+struct RiskyBusiness {
+    int data = 0;
+    RiskyBusiness(int d) : data(d) { std::cout << "RiskyBusiness created.\n"; }
+    ~RiskyBusiness() { std::cout << "RiskyBusiness destroyed.\n"; }
+
+    // BUG: This method creates an independent shared_ptr to this object.
+    // If another shared_ptr already owns this object, this leads to
+    // multiple independent owners and double deletion.
+    // If no shared_ptr owns it, this is the only one, but it's risky if
+    // the object was stack-allocated or managed by other means.
+    std::shared_ptr<RiskyBusiness> getShared() {
+        // return std::shared_ptr<RiskyBusiness>(this); // DANGEROUS!
+        std::cout << "RiskyBusiness::getShared() called - returning potentially unsafe shared_ptr.\n";
+        // This line is commented out to prevent immediate crash in demo.
+        // To see the bug, uncomment it and manage an instance with another shared_ptr.
+        return nullptr; // Placeholder to avoid crash in simple run
+    }
+
+    // Correct way if class inherits from std::enable_shared_from_this<RiskyBusiness>
+    // std::shared_ptr<RiskyBusiness> getSafeShared() {
+    //     return shared_from_this();
+    // }
+};
+
+int main() {
+    // Scenario 1: Object managed by a shared_ptr already
+    // auto rb_owner = std::make_shared<RiskyBusiness>(10);
+    // std::shared_ptr<RiskyBusiness> rb_problematic = rb_owner->getShared(); // if getShared() returned std::shared_ptr<RiskyBusiness>(this)
+    // This would lead to double deletion if rb_problematic was created with 'this'.
+
+    // Scenario 2: Stack object (shared_ptr from 'this' would be disastrous)
+    // RiskyBusiness stack_rb(20);
+    // std::shared_ptr<RiskyBusiness> stack_sp = stack_rb.getShared(); // BAD!
+
+    std::cout << "Exiting main." << std::endl;
+    return 0;
+}
+```
+**Fix:** Inherit from `std::enable_shared_from_this<YourClass>` and use `shared_from_this()` inside member functions *only when you know an object of `YourClass` is already managed by a `std::shared_ptr`*.
+
+</div>
+
+<div>
+
+### Mistake 4: Dangling `get()` Pointer
+
+Storing the raw pointer from `get()` and using it after the `shared_ptr` (and thus the object) has been destroyed.
+
+**Spot the Bug:**
+```cpp
+#include <iostream>
+#include <memory>
+
+struct FleetingResource {
+    int id = 7;
+    FleetingResource() { std::cout << "FleetingResource created.\n"; }
+    ~FleetingResource() { std::cout << "FleetingResource destroyed.\n"; }
+};
+
+int main() {
+    FleetingResource* raw_ptr = nullptr;
+    {
+        auto sp_resource = std::make_shared<FleetingResource>();
+        raw_ptr = sp_resource.get(); // Get raw pointer
+        std::cout << "Inside scope, raw_ptr->id: " << raw_ptr->id << std::endl;
+    } // sp_resource goes out of scope, FleetingResource is destroyed.
+
+    // BUG: raw_ptr is now a dangling pointer!
+    // Accessing it leads to undefined behavior.
+    std::cout << "Outside scope. Attempting to access raw_ptr->id: ";
+    // std::cout << raw_ptr->id << std::endl; // CRASH or garbage data!
+    std::cout << "[Access commented out to prevent crash]" << std::endl;
+
+    std::cout << "Exiting main." << std::endl;
+    return 0;
+}
+```
+**Fix:** Ensure the raw pointer obtained from `get()` is not used beyond the lifetime of the owning `shared_ptr`(s). If you need to extend its lifetime, copy the `shared_ptr`.
+
+</div>
+</div>
+
+<!-- TODO:
+- Interactive debugging scenarios where users can "step through" and see errors.
+- "Spot the Bug" code examples made more interactive.
+- Animated error explanations.
+- Quick fixes with before/after comparisons (visual).
+-->
+<div class="mt-6 p-4 border rounded-lg glassmorphic min-h-[150px] flex flex-col items-center justify-center">
+  <p class="text-lg font-semibold mb-2">Interactive Debug Zone</p>
+  <img src="https://placehold.co/300x120?text=Interactive+Bug+Fixing" alt="Placeholder for interactive debugging" class="rounded opacity-70">
+  <p class="mt-2 text-sm"><em>[Future: Interactive "Spot the Bug" and "Fix the Bug" exercises here.]</em></p>
+</div>
+---
+layout: default
+# ---
+# Migration Strategy (Slide 20)
+# ---
+
+# Migrating to Smart Pointers: A Phased Approach 🗺️
+
+Transitioning a legacy codebase from raw pointers to smart pointers can seem daunting. A gradual, phased approach is often most effective.
+
+<div class="grid grid-cols-1 md:grid-cols-2 gap-8 mt-6 items-start">
+
+<div>
+
+### 1. Identify Ownership and Lifetimes
+- **Analyze:** For each raw pointer, determine who "owns" the memory it points to. Who is responsible for `delete`ing it?
+- **Document:** Understand the intended lifetime of the pointed-to objects.
+- **Prioritize:** Start with areas most prone to leaks or crashes (e.g., complex object relationships, exception-unsafe code).
+
+### 2. Start with `std::unique_ptr`
+- **Exclusive Ownership:** If an object has a single, clear owner, `std::unique_ptr` is the ideal first step. It has minimal overhead.
+  ```cpp
+  // Legacy Code:
+  class LegacyWidget {
+  public:
+    LegacyWidget() { /* ... */ }
+    ~LegacyWidget() { /* ... */ }
+    void process() { /* ... */ }
+  };
+
+  void old_manager_func() {
+    LegacyWidget* w = new LegacyWidget();
+    // ... use w ...
+    delete w; // Manual deletion
+  }
+
+  // Refactored with unique_ptr:
+  void new_manager_func() {
+    auto w_ptr = std::make_unique<LegacyWidget>();
+    // ... use w_ptr (e.g., w_ptr->process()) ...
+    // No delete needed! Automatically cleaned up.
+  }
+  ```
+- **Factory Functions:** Functions that create objects should return `std::unique_ptr`.
+  ```cpp
+  // std::unique_ptr<MyObject> createMyObject(int params) {
+  //     return std::make_unique<MyObject>(params);
+  // }
+  ```
+
+</div>
+
+<div>
+
+### 3. Introduce `std::shared_ptr` for Shared Ownership
+- **Identify Shared Resources:** If multiple parts of your code legitimately need to share ownership and control the lifetime of an object, refactor to `std::shared_ptr`.
+  ```cpp
+  // Legacy (e.g., multiple components access a shared resource):
+  // Resource* g_shared_res = nullptr; // (Potentially global or passed around)
+
+  // void componentA() { if(g_shared_res) g_shared_res->use(); }
+  // void componentB() { if(g_shared_res) g_shared_res->use(); }
+  // // Who deletes g_shared_res? When?
+
+  // Refactored with shared_ptr:
+  // std::shared_ptr<Resource> g_shared_res_ptr; // Initialize appropriately
+
+  // void init_shared_resource() {
+  //   g_shared_res_ptr = std::make_shared<Resource>();
+  // }
+
+  // void componentA_new() {
+  //   auto local_s_ptr = g_shared_res_ptr; // Copy, increments ref count
+  //   if(local_s_ptr) local_s_ptr->use();
+  //   // Resource lives as long as any shared_ptr (g_shared_res_ptr or local_s_ptr) exists
+  // }
+  ```
+- **`std::make_shared`:** Use it for creating new shared objects.
+
+### 4. Use `std::weak_ptr` for Non-Owning Observation & Cycles
+- **Break Cycles:** If you identify or create ownership cycles with `shared_ptr`, use `weak_ptr` for one of the links.
+- **Caching/Observation:** When a class needs to "observe" an object managed by `shared_ptr` without extending its lifetime (e.g., a cache).
+
+### 5. Refactor Function Signatures
+- **Pass by `const std::shared_ptr<T>&` or `const std::unique_ptr<T>&`:** For non-owning observation where the function needs access to the smart pointer's API itself or to potentially make a copy.
+- **Pass by `T*` or `T&`:** If the function only needs to *use* the object for the duration of the call and doesn't care about its lifetime management. (Ensure caller guarantees lifetime).
+- **Pass by `std::shared_ptr<T>` (by value):** If the function needs to take shared ownership.
+
+### 6. Tools & Techniques
+- **Static Analysis:** Tools like Clang Tidy can help identify raw pointer usage and potential memory issues.
+- **Code Reviews:** Focus on pointer usage and ownership semantics.
+- **Testing:** Thoroughly test after each refactoring phase.
+- **Incremental Changes:** Don't try to change everything at once. Migrate module by module or class by class.
+
+</div>
+</div>
+
+**Gradual adoption is key. Each smart pointer introduced makes your code safer and more robust.**
+
+<!-- TODO:
+- More detailed before/after code transformation examples.
+- Visual aids for "ownership chains" before and after.
+-->
+<div class="mt-6 p-4 border rounded-lg glassmorphic min-h-[100px] flex flex-col items-center justify-center">
+  <p class="text-lg font-semibold mb-2">Refactoring Showcase</p>
+  <img src="https://placehold.co/300x80?text=Before+->+After+Smart+Pointers" alt="Placeholder for refactoring examples" class="rounded opacity-70">
+  <p class="mt-2 text-sm"><em>[Future: Visual before/after code snippets and diagrams illustrating migration.]</em></p>
+</div>
+---
+layout: default
+# ---
+# Summary - Key Takeaways (Slide 21)
+# ---
+
+# Summary: Mastering `shared_ptr` 🌟
+
+Let's recap the key takeaways from our journey with `std::shared_ptr`.
+
+<div class="grid grid-cols-1 md:grid-cols-2 gap-8 mt-10 items-start">
+
+<div>
+
+### Core Benefits:
+-   🧠 **Automatic Memory Management**: `shared_ptr` automates the deletion of dynamically allocated objects, significantly reducing memory leaks.
+-   🤝 **Shared Ownership**: Clearly expresses and manages shared ownership semantics, where multiple independent entities co-own a resource.
+-   🔒 **RAII Principle**: Embraces Resource Acquisition Is Initialization, ensuring resources are properly released when the `shared_ptr` goes out of scope.
+-   🛡️ **Exception Safety**: Helps write more robust code where resources are cleaned up even in the presence of exceptions.
+
+### How It Works:
+-   <span class="text-cyan-400">🔢 **Reference Counting**</span>: A control block tracks how many `shared_ptr`s point to an object. The object is deleted when the count reaches zero.
+-   <span class="text-cyan-400">⚙️ **`std::make_shared`**</span>: The preferred way to create `shared_ptr`s for efficiency and safety.
+-   <span class="text-cyan-400">🔄 **Copyable & Assignable**</span>: `shared_ptr`s can be freely copied and assigned, adjusting reference counts automatically.
+
+</div>
+
+<div>
+
+### Key Usage Points:
+-   ✨ **When to Choose `shared_ptr`**:
+    -   When an object's lifetime must be managed by multiple, independent parts of your program.
+    -   For complex data structures where nodes might be shared (e.g., graphs, sometimes trees).
+    -   In callback systems or asynchronous operations where the lifetime of a resource must extend until the operation completes.
+-   ⚠️ **Watch Out For**:
+    -   **Circular References**: Break them with `std::weak_ptr`.
+    -   **Performance Overhead**: Understand the cost of atomic reference counting and control block allocation, especially in highly performance-sensitive code. Use `unique_ptr` if exclusive ownership is sufficient.
+    -   **Misuse of `get()`**: Avoid deleting or creating new `shared_ptr`s from the raw pointer returned by `get()`.
+-   🛠️ **Custom Deleters**: Provide flexibility for managing resources beyond simple memory (e.g., file handles, network sockets).
+
+</div>
+</div>
+
+<br/>
+<div class="text-center p-6 mt-8 bg-gradient-to-r from-purple-700 via-blue-600 to-cyan-500 text-white rounded-lg shadow-xl">
+  <p class="text-2xl font-semibold">`std::shared_ptr` is a powerful tool for writing safer, more modern C++.</p>
+  <p class="mt-2">Use it wisely to simplify memory management and enhance code clarity!</p>
+</div>
+
+<!-- TODO:
+- Animated bullet points with icons for each key takeaway.
+- A final "Memory Management Made Easy" visual flourish.
+-->
+---
+layout: default
+# ---
+# Q&A - Interactive Session (Slide 22)
+# ---
+
+# Q&A and Interactive Discussion 🙋‍♂️🙋‍♀️
+
+<div class="text-center mt-12">
+  <p class="text-6xl">?</p>
+  <p class="text-3xl mt-4">Your Questions Answered!</p>
+  <p class="mt-6 text-lg">
+    Now's the time to discuss any concepts, ask clarifying questions, or share your experiences with `shared_ptr` (or memory management in general).
+  </p>
+</div>
+
+<div class="grid grid-cols-1 md:grid-cols-2 gap-8 mt-10 items-start">
+
+<div>
+  <h3 class="text-xl font-semibold text-cyan-400">Possible Discussion Points:</h3>
+  <ul class="list-disc pl-5 mt-2">
+    <li>Specific use cases for `shared_ptr` vs. `unique_ptr`.</li>
+    <li>Performance implications in different scenarios.</li>
+    <li>Interactions with C-style APIs or older libraries.</li>
+    <li>Advanced `shared_ptr` features (e.g., aliasing constructor, `allocate_shared`).</li>
+    <li>Thread safety details for complex multi-threaded applications.</li>
+    <li>Common challenges when migrating legacy code.</li>
+  </ul>
+</div>
+
+<div>
+  <h3 class="text-xl font-semibold text-purple-400">Future Enhancements for this Section:</h3>
+  <ul class="list-disc pl-5 mt-2">
+    <li>Pre-populated list of common questions with expandable answers.</li>
+    <li>Interactive "Code Challenge" problems for the audience to solve.</li>
+    <li>Live polls on specific `shared_ptr` topics or preferences.</li>
+    <li>Links to further reading or advanced topics based on Q&A.</li>
+  </ul>
+  <!-- TODO: Add animated question marks or other engaging visuals -->
+  <div class="mt-6 p-4 border rounded-lg glassmorphic min-h-[100px] flex flex-col items-center justify-center">
+    <p class="text-lg font-semibold mb-2">Interactive Zone</p>
+    <img src="https://placehold.co/300x80?text=Q&A+Animations+&+Polls" alt="Placeholder for Q&A interactive elements" class="rounded opacity-70">
+  </div>
+</div>
+
+</div>
+
+<div class="mt-12 text-center">
+  <p class="text-lg">Let's make this an engaging and informative session!</p>
+</div>
+---
+layout: default
+# ---
+# Thank You & Resources (Slide 23)
+# ---
+
+# Thank You! 🙏
+
+<div class="text-center mt-8">
+  <p class="text-3xl">Thank you for joining this session on Mastering C++ `shared_ptr`!</p>
+  <p class="mt-4 text-xl">I hope this presentation has been informative and helps you write safer, more modern C++.</p>
+  <img src="https://media.giphy.com/media/WJjLyXCVvro2I/giphy.gif" alt="Thank You Cat" class="mx-auto mt-6 rounded-lg shadow-lg h-64">
+</div>
+
+<div class="grid grid-cols-1 md:grid-cols-2 gap-8 mt-12 items-start">
+
+<div>
+  <h3 class="text-xl font-semibold text-cyan-400">Stay Connected & Keep Learning:</h3>
+  <ul class="list-disc pl-5 mt-2">
+    <li>**Your Name/Handle:** [Your Name/Link to Profile (e.g., GitHub, LinkedIn)]</li>
+    <li>**Presentation Source:** [Link to GitHub Repo for these slides]</li>
+    <li>**Email:** [Your Contact Email (Optional)]</li>
+  </ul>
+
+  <h3 class="text-xl font-semibold text-cyan-400 mt-6">Recommended C++ Resources:</h3>
+  <ul class="list-disc pl-5 mt-2">
+    <li>**cppreference.com:** Comprehensive C++ standard library reference.
+        <ul><li>`std::shared_ptr`: [https://en.cppreference.com/w/cpp/memory/shared_ptr](https://en.cppreference.com/w/cpp/memory/shared_ptr)</li></ul>
+        <ul><li>`std::make_shared`: [https://en.cppreference.com/w/cpp/memory/make_shared](https://en.cppreference.com/w/cpp/memory/make_shared)</li></ul>
+        <ul><li>`std::weak_ptr`: [https://en.cppreference.com/w/cpp/memory/weak_ptr](https://en.cppreference.com/w/cpp/memory/weak_ptr)</li></ul>
+    </li>
+    <li>**ISO C++ Standard (isocpp.org):** News, articles, and links to the official standard.</li>
+    <li>**C++ Core Guidelines:** Maintained by Bjarne Stroustrup and Herb Sutter.</li>
+  </ul>
+</div>
+
+<div>
+  <h3 class="text-xl font-semibold text-purple-400">Further Reading & Books:</h3>
+  <ul class="list-disc pl-5 mt-2">
+    <li>"Effective Modern C++" by Scott Meyers (Covers smart pointers in detail)</li>
+    <li>"A Tour of C++" by Bjarne Stroustrup</li>
+    <li>"C++ Primer" by Stanley B. Lippman, Josée Lajoie, and Barbara E. Moo</li>
+  </ul>
+
+  <h3 class="text-xl font-semibold text-purple-400 mt-6">Online Communities & Forums:</h3>
+  <ul class="list-disc pl-5 mt-2">
+    <li>Stack Overflow (c++ and smart-pointers tags)</li>
+    <li>C++ Subreddit (r/cpp)</li>
+    <li>ACCU (Association of C and C++ Users)</li>
+    <li>CppCon, CppNow, Meeting C++ (Conference talks often available online)</li>
+  </ul>
+</div>
+
+</div>
+
+<div class="mt-12 text-center text-sm opacity-80">
+  <p>Happy Coding in Modern C++!</p>
+</div>
+---
