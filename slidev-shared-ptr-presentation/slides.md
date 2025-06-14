@@ -46,7 +46,7 @@ using a Vue component:
 -->
 ---
 layout: default
-# TODO: Consider implementing a progress tracker component here later.
+<!-- TODO: Consider implementing a progress tracker component here later. -->
 # Example: <ProgressTracker :currentSlide=".nav.currentPage" :totalSlides=".nav.total" />
 
 # ---
@@ -762,12 +762,12 @@ public:
 };
 
 void process_task(std::shared_ptr<Task> current_task, const std::string& context) {
-    std::cout << "  [" << context << "] Current task: " << current_task->task_id
-              << ", Use count: " << current_task.use_count() << std::endl;
+    std::cout << "  [" << context << "] Entered. Task '" << current_task->task_id
+              << "' use_count upon entry (including this function's copy): " << current_task.use_count() << std::endl;
     current_task->execute();
-    // current_task goes out of scope here, ref count decrements.
-    std::cout << "  [" << context << "] Finished processing. Task use count now: "
-              << current_task.use_count() -1 << " (approx, as current_task is dying)" << std::endl;
+    // When current_task goes out of scope at the end of this function, its reference count will decrement.
+    std::cout << "  [" << context << "] Finishing. Task '" << current_task->task_id
+              << "' use_count before this function's copy is released: " << current_task.use_count() << std::endl;
 }
 
 int main() {
@@ -814,7 +814,7 @@ int main() {
 }
 
 ```
-*(Note: `use_count()` in `process_task` for the dying parameter is illustrative; the exact moment of decrement can be subtle.)*
+*(Note: The `use_count()` shows the count including the `shared_ptr` parameter `current_task`. This count will decrease when `process_task` exits and `current_task` is destroyed.)*
 
 </div>
 
@@ -903,7 +903,7 @@ Once you have a `std::shared_ptr`, you'll want to use the object it manages.
 <div class="p-4 border rounded-lg glassmorphic min-h-[300px] flex flex-col items-center justify-center">
   <p class="text-lg font-semibold mb-2">Interactive Code Playground</p>
   <img src="https://placehold.co/350x200?text=Code+Editor+Here" alt="Placeholder for interactive code playground" class="rounded opacity-70">
-  <p class="mt-2 text-sm"><em>[TODO: Embed an interactive C++ code editor (e.g., via a custom component or iframe to an online compiler) where users can try these operations.]</em></p>
+  <p class="mt-2 text-sm"><!-- TODO: Embed an interactive C++ code editor (e.g., via a custom component or iframe to an online compiler) where users can try these operations. Placeholder text for future implementation. --></p>
   <pre><code class="language-cpp">
 // Example for playground:
 #include <iostream>
@@ -1105,7 +1105,7 @@ The `reset()` method is versatile:
 <div class="mt-4 p-4 border rounded-lg glassmorphic min-h-[150px] flex flex-col items-center justify-center">
   <p class="text-lg font-semibold mb-2">Live Demo Zone</p>
   <img src="https://placehold.co/300x100?text=Visual+Feedback+Here" alt="Placeholder for live demo" class="rounded opacity-70">
-  <p class="mt-2 text-sm"><em>[TODO: Visual elements showing `use_count` changes and object status (e.g., "Managed", "Empty") as operations are performed.]</em></p>
+  <p class="mt-2 text-sm"><!-- TODO: Visual elements showing use_count changes and object status (e.g., "Managed", "Empty") as operations are performed. Placeholder text for future implementation. --></p>
 </div>
 
 </div>
@@ -1271,7 +1271,7 @@ A custom deleter is a callable object (function pointer, lambda expression, or o
 <div class="mt-4 p-4 border rounded-lg glassmorphic min-h-[150px] flex flex-col items-center justify-center">
   <p class="text-lg font-semibold mb-2">Use Case Examples</p>
   <img src="https://placehold.co/300x100?text=File+Handle,+DB+Connection" alt="Placeholder for use cases" class="rounded opacity-70">
-  <p class="mt-2 text-sm"><em>[TODO: Visuals for file handles needing fclose, DB connections needing disconnect, custom hardware resource release, etc.]</em></p>
+  <p class="mt-2 text-sm"><!-- TODO: Visuals for file handles needing fclose, DB connections needing disconnect, custom hardware resource release, etc. Placeholder text for future implementation. --></p>
 </div>
 
 </div>
@@ -1336,6 +1336,9 @@ int main() {
         std::cout << "modernArrayPtr[1] = " << modernArrayPtr[1] << std::endl;
     }
     // (If your compiler is pre-C++17, this line might cause an error or require qualification)
+    // For new C++17 (and later) code, std::shared_ptr<T[]> is the standard
+    // and preferred way to manage dynamic arrays with shared_ptr,
+    // making custom deleters for arrays largely unnecessary.
 
     std::cout << "\n--- Exiting main ---" << std::endl;
     // All shared_ptrs go out of scope, their respective deleters are called.
@@ -1562,6 +1565,38 @@ Using `std::shared_ptr` effectively involves following some key guidelines to ma
       void onComplete() { /* ... */ }
   };
   ```
+Here's a more direct example of `std::enable_shared_from_this` in action:
+  ```cpp
+  // Correctly using shared_from_this():
+  class SafeSharer : public std::enable_shared_from_this<SafeSharer> {
+  public:
+    SafeSharer() { std::cout << "SafeSharer created.\n"; }
+    ~SafeSharer() { std::cout << "SafeSharer destroyed.\n"; }
+
+    // Call this only on an object already managed by std::shared_ptr
+    std::shared_ptr<SafeSharer> getSelf() {
+      return shared_from_this();
+    }
+
+    void doSomethingAndShare() {
+      std::cout << "Doing something and getting a shared_ptr to self.\n";
+      std::shared_ptr<SafeSharer> self_ptr = getSelf(); // or directly shared_from_this()
+      // Note: use_count here will be at least 2 (original + self_ptr)
+      std::cout << "  SafeSharer's self_ptr use_count: " << self_ptr.use_count() << std::endl;
+    }
+  };
+
+  // Example of how SafeSharer might be used:
+  // int main() { // Or some function
+  //   auto ss_instance = std::make_shared<SafeSharer>();
+  //   ss_instance->doSomethingAndShare();
+  //
+  //   std::shared_ptr<SafeSharer> another_s_ptr = ss_instance->getSelf();
+  //   std::cout << "Use count for ss_instance (and another_s_ptr): "
+  //             << ss_instance.use_count() << std::endl; // Will be higher
+  //   return 0;
+  // } // ss_instance and another_s_ptr go out of scope, SafeSharer destroyed.
+  ```
 
 </div>
 
@@ -1629,7 +1664,7 @@ Using `std::shared_ptr` effectively involves following some key guidelines to ma
 
   Creating a *new* `std::shared_ptr<Node>(this)` from a raw `this` pointer (as shown in `problematicRegistration` or the commented-out constructor line) is dangerous because:
   1. If the `Node` instance is *already* managed by a `shared_ptr` (e.g., `auto node_ptr = std::make_shared<Node>(...);`), then `std::shared_ptr<Node>(this)` creates a *second, independent* `shared_ptr` with its own control block. Both `shared_ptr`s will think they uniquely own the memory, leading to a double `delete` when they both go out of scope.
-  2. If the `Node` instance was created as a stack variable or with `new` but *not* yet managed by any `shared_ptr`, creating a `shared_ptr` from `this` inside its constructor or a member function can be problematic if not handled carefully (e.g. the object might be deleted prematurely if that `shared_ptr` is the only one and goes out of scope).
+  2. If the `Node` instance was created as a stack variable (e.g., `Node n;`), using `std::shared_ptr<Node>(this)` is fundamentally wrong as it will later attempt to `delete` stack memory, leading to undefined behavior. If created with `new Node(...)` but not yet managed by any `shared_ptr`, creating a `std::shared_ptr<Node>(this)` means this new `shared_ptr` is the *only* owner; if it's temporary or goes out of scope prematurely, the object gets deleted, potentially while raw pointers to it still exist.
 
   The `shared_from_this()` method, when called on an object already managed by a `std::shared_ptr`, returns a new `shared_ptr` instance that *shares ownership* with the existing `shared_ptr`(s), correctly incrementing the reference count in the *same* control block.
 
@@ -1654,7 +1689,7 @@ Using `std::shared_ptr` effectively involves following some key guidelines to ma
 <div class="mt-4 p-4 border rounded-lg glassmorphic min-h-[150px] flex flex-col items-center justify-center">
   <p class="text-lg font-semibold mb-2">Interactive Learning</p>
   <img src="https://placehold.co/250x120?text=Don'ts+(Red)+Quiz" alt="Placeholder for quiz" class="rounded opacity-70">
-  <p class="mt-2 text-sm"><em>[TODO: Color-coded Do/Don't code snippets. Interactive quiz questions about best practices.]</em></p>
+  <p class="mt-2 text-sm"><!-- TODO: Color-coded Do/Don't code snippets. Interactive quiz questions about best practices. Placeholder text for future implementation. --></p>
 </div>
 
 </div>
@@ -1792,7 +1827,7 @@ public:
     }
 
     void addWorker(const std::string& worker_id) {
-        if(shared_logger_instance) shared_logger_instance->log("Attempting to add worker: " + worker_id);
+        if(shared_logger_instance) shared_logger_instance->log("ResourceManager: Adding worker '" + worker_id + "'.");
         // Create a new worker, passing shared_ptrs to the common resources.
         // This increments ref counts for Database and Logger.
         auto worker = std::make_shared<Worker>(shared_db_instance, shared_logger_instance, worker_id);
